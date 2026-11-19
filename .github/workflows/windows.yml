@@ -23,6 +23,22 @@ jobs:
       - run: npm ci
       # beforeBuildCommand builds the MCP sidecar (pet-mcp-x86_64-pc-windows-msvc.exe) first
       - run: npx tauri build
+      # The MCP sidecar and the Stop hook really work on Windows, Korean text included: start the
+      # built sidecar, run the hook the way Claude Code would (the README's settings command), and
+      # check what landed in ~/.pet/notifications.json.
+      - name: Check sidecar + Stop hook on Windows
+        shell: bash
+        run: |
+          mkdir -p ~/.pet && cp hooks/stop-hook.ps1 ~/.pet/
+          (sleep 120) | src-tauri/binaries/pet-mcp-x86_64-pc-windows-msvc.exe > sidecar.log 2>&1 &
+          for i in $(seq 30); do [ -f ~/.pet/token ] && curl -s -o /dev/null http://127.0.0.1:7878/mcp && break; sleep 1; done
+          printf '%s' '{"cwd":"C:\\work\\my-app","last_assistant_message":"## 윈도우 훅 테스트\n둘째 줄"}' \
+            | powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME/.pet/stop-hook.ps1"
+          cat sidecar.log
+          node -e '
+            const n = require(require("os").homedir() + "/.pet/notifications.json")[0];
+            console.log(n.title, "|", n.message);
+            if (n.title !== "my-app · 응답 완료" || n.message !== "윈도우 훅 테스트") process.exit(1);'
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-pet-windows

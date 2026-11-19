@@ -3,6 +3,8 @@
 Tauri 2 + TypeScript(Vanilla)로 만든 macOS 데스크톱 펫. 시크하고 귀찮음 많은 검은 고양이가 화면 위를 느릿느릿 돌아다니고,
 MCP 서버가 내장되어 있어 Claude Code 같은 도구가 `notify`를 호출하면 말풍선으로 알려줍니다.
 
+> **그냥 쓰고 싶다면** → [INSTALL.md](INSTALL.md) (설치 파일 받기, Claude Code 연결, 답할 때마다 말풍선 띄우기)
+
 ## 실행
 
 ```bash
