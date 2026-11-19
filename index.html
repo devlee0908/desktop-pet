@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>desktop-pet</title>
+    <style>
+      /* sizes come from src/config.ts (set as CSS variables in main.ts) */
+      body { position: relative; } /* bubble and badge are placed relative to the window */
+      html, body { margin: 0; width: var(--win-w); height: var(--win-h); background: transparent; overflow: hidden; user-select: none; -webkit-user-select: none; }
+      /* 140x160 cat box; transforms on it (bounce, squash) pivot at the feet */
+      #stage { position: absolute; left: var(--cat-left); top: var(--cat-top); width: 140px; height: 160px; transform-origin: 70px 153px; cursor: grab; }
+      .view { position: absolute; inset: 0; opacity: 0; pointer-events: none; transform-origin: 70px 0; }
+      .view.on { opacity: 1; pointer-events: auto; }
+      .view svg { display: block; width: 140px; height: 160px; overflow: visible; }
+      #fx { position: absolute; inset: 0; pointer-events: none; }
+      .z { position: absolute; left: 0; top: 0; font: 700 15px ui-rounded, system-ui, sans-serif; color: #fff;
+           -webkit-text-stroke: 1.2px #000; paint-order: stroke fill; opacity: 0; }
+
+      /* level colours (bubble ring, unread dot) */
+      :root { --lv-info: #6FA8DC; --lv-success: #8BC34A; --lv-warning: #F2C14E; --lv-error: #E06666; }
+
+      /* speech bubble beside the head, in the cat's own style: thick black outline, level-coloured inner ring */
+      #bubble { position: absolute; top: calc(var(--cat-top) - 4px); width: max-content; min-width: 150px; max-width: 220px; box-sizing: border-box;
+                padding: 9px 26px 9px 12px; background: #fff; color: #1d1c1a; border: 2.5px solid #000; border-radius: 14px;
+                box-shadow: inset 0 0 0 3px var(--lv), 0 2px 6px rgba(0,0,0,.18);
+                font: 12px/1.38 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+                opacity: 0; pointer-events: none; transform: scale(.92); transition: opacity .22s ease, transform .22s ease; cursor: default; }
+      #bubble.right { left: calc(var(--cat-left) + 114px); transform-origin: 0 30px; }
+      #bubble.left { right: calc(var(--win-w) - var(--cat-left) - 12px); transform-origin: 100% 30px; }
+      #bubble.on { opacity: 1; transform: scale(1); pointer-events: auto; }
+      /* the pointer toward the head */
+      /* pointer: a black triangle with a white one inside. The white one reaches over the black outline
+         (so the pointer joins the bubble without a line) but stops before the level ring, which stays whole. */
+      #bubble::before, #bubble::after { content: ""; position: absolute; }
+      #bubble::before { top: 16px; width: 14.5px; height: 22px; background: #000; }
+      #bubble::after { top: 19.5px; width: 10px; height: 15px; background: #fff; }
+      #bubble.right::before { left: -14.5px; clip-path: polygon(0 50%, 100% 0, 100% 100%); }
+      #bubble.right::after { left: -10px; clip-path: polygon(0 50%, 100% 0, 100% 100%); }
+      #bubble.left::before { right: -14.5px; clip-path: polygon(100% 50%, 0 0, 0 100%); }
+      #bubble.left::after { right: -10px; clip-path: polygon(100% 50%, 0 0, 0 100%); }
+      #bubble .t { font-weight: 700; font-size: 12.5px; overflow-wrap: anywhere; }
+      #bubble .m { margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; white-space: pre-wrap; }
+      #bubble.open .m { display: block; max-height: 9.5em; overflow-y: auto; }
+      #bubble .s { margin-top: 4px; font-size: 10.5px; color: #8a8883; }
+      #bubble .x { position: absolute; top: 5px; right: 7px; width: 16px; height: 16px; border: 0; padding: 0; background: none;
+                   font: 15px/16px system-ui; color: #8a8883; cursor: pointer; }
+      #bubble .x:hover { color: #000; }
+      #bubble[data-level="info"] { --lv: var(--lv-info); }
+      #bubble[data-level="success"] { --lv: var(--lv-success); }
+      #bubble[data-level="warning"] { --lv: var(--lv-warning); }
+      #bubble[data-level="error"] { --lv: var(--lv-error); }
+
+      /* waiting notifications: a little crescent with the count, by the ear away from the bubble */
+      #queue { position: absolute; top: calc(var(--cat-top) - 10px); width: 30px; height: 26px; pointer-events: none;
+               opacity: 0; transform: scale(.5); transition: opacity .2s, transform .2s; }
+      #queue.on { opacity: 1; transform: scale(1); }
+      #queue.left { left: calc(var(--cat-left) - 6px); }
+      #queue.right { left: calc(var(--cat-left) + 116px); }
+      #queue svg { position: absolute; inset: 0; overflow: visible; }
+      #queue span { position: absolute; left: 13px; top: 5px; font: 800 11px/16px system-ui; color: #000; }
+
+      /* unread dot by the cat's head (hidden while a bubble is up) */
+      #unread { position: absolute; left: calc(var(--cat-left) + 112px); top: calc(var(--cat-top) + 19px); width: 11px; height: 11px;
+                border-radius: 50%; border: 1.5px solid #000; box-shadow: 0 0 0 1.5px #fff; pointer-events: none;
+                opacity: 0; transform: scale(.4); transition: opacity .3s, transform .3s; }
+      #unread.on { opacity: 1; transform: scale(1); }
+      #unread.hold { opacity: 0; }
+    </style>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <div id="stage">
+      <div class="view on" id="v-front"></div>
+      <div class="view" id="v-side"></div>
+      <div class="view" id="v-back"></div>
+    </div>
+    <div id="fx"></div>
+    <div id="unread"></div>
+    <div id="bubble" role="status" aria-live="polite"><button class="x" aria-label="닫기">×</button><div class="t"></div><div class="m"></div><div class="s"></div></div>
+    <div id="queue" aria-hidden="true">
+      <svg viewBox="0 0 30 26"><path d="M17 2.5A10.5 10.5 0 1 0 25.5 20 8.5 8.5 0 1 1 17 2.5Z" fill="#fff" stroke="#000" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span></span>
+    </div>
+  </body>
+</html>

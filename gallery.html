@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>행동 갤러리</title>
+    <style>
+      :root { --bg: #f4f3ef; --card: #fff; --line: #e2dfd8; --text: #1d1c1a; --muted: #77746e; color-scheme: light dark; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #1b1a18; --card: #262522; --line: #3a3834; --text: #efede8; --muted: #9c9992; } }
+      body { margin: 0; padding: 20px 16px 40px; background: var(--bg); color: var(--text);
+             font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", "Malgun Gothic", system-ui, sans-serif; }
+      h1 { margin: 0 0 4px; font-size: 20px; }
+      header p { margin: 0 0 8px; color: var(--muted); }
+      h2 { margin: 26px 0 10px; font-size: 14px; color: var(--muted); font-weight: 600; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(226px, 1fr)); gap: 12px; }
+      .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 12px; }
+      .card h3 { margin: 6px 0 2px; font-size: 13.5px; }
+      .card p { margin: 0; color: var(--muted); font-size: 12px; }
+      .card small { display: block; margin-top: 6px; font: 11px ui-monospace, Menlo, monospace; color: var(--muted); }
+      /* room around the 140x160 box: hanging tails, lifted heads and the walk bounce leave it */
+      .stage { position: relative; height: 250px; margin: 0 auto; width: 200px; overflow: hidden;
+               background: radial-gradient(ellipse 50% 6% at 50% 82%, rgba(0,0,0,.06), transparent 70%); }
+      /* scaled with a transform, not CSS zoom: under zoom WebKit misplaces SVG parts outside the 140x160 box */
+      .scaler { position: absolute; left: 16px; top: 36px; width: 140px; height: 160px; transform: scale(1.2); transform-origin: 0 0; }
+      .cat { position: absolute; inset: 0; transform-origin: 70px 153px; }
+      .view { position: absolute; inset: 0; opacity: 0; transition: opacity 150ms; }
+      .view.on { opacity: 1; }
+      .view svg { display: block; width: 140px; height: 160px; overflow: visible; }
+      .fx { position: absolute; inset: 0; pointer-events: none; }
+      .fx span { position: absolute; left: 0; top: 0; font: 700 15px ui-rounded, system-ui; color: #fff; -webkit-text-stroke: 1.2px #000; paint-order: stroke fill; }
+    </style>
+    <script type="module" src="/src/gallery.ts"></script>
+  </head>
+  <body>
+    <header>
+      <h1>행동 갤러리</h1>
+      <p>실제 앱과 같은 코드(brain · rig · SVG)로 모든 행동을 반복 재생합니다. 카드 아래 회색 글씨는 현재 상태 · 뷰(↔ = 좌우 반전)입니다.</p>
+    </header>
+    <main id="gallery"></main>
+  </body>
+</html>
