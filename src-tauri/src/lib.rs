@@ -100,6 +100,23 @@ fn tray_icon(alert: bool) -> tauri::Result<tauri::image::Image<'static>> {
     Ok(tauri::image::Image::new_owned(px, w, h))
 }
 
+/// macOS: `visibleOnAllWorkspaces` alone keeps the pet off other apps' full-screen spaces. Adding
+/// FullScreenAuxiliary lets the (floating-level) pet window show over full-screen apps too.
+#[cfg(target_os = "macos")]
+fn join_fullscreen_spaces(app: &AppHandle) {
+    use objc2::{msg_send, runtime::AnyObject};
+    const CAN_JOIN_ALL_SPACES: usize = 1 << 0; // NSWindowCollectionBehaviorCanJoinAllSpaces
+    const FULL_SCREEN_AUXILIARY: usize = 1 << 8; // NSWindowCollectionBehaviorFullScreenAuxiliary
+    let Some(win) = app.get_webview_window("main") else { return };
+    let Ok(ns) = win.ns_window() else { return };
+    // setup() runs on the main thread, where AppKit calls belong
+    unsafe {
+        let ns = ns as *mut AnyObject;
+        let behavior: usize = msg_send![ns, collectionBehavior];
+        let _: () = msg_send![ns, setCollectionBehavior: behavior | CAN_JOIN_ALL_SPACES | FULL_SCREEN_AUXILIARY];
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -112,7 +129,10 @@ pub fn run() {
         .setup(|app| {
             // Hide from the Dock and Cmd+Tab (skipTaskbar only affects Windows/Linux).
             #[cfg(target_os = "macos")]
-            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+            {
+                app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                join_fullscreen_spaces(app.handle());
+            }
 
             // Menu bar icon (declared in tauri.conf.json): open inbox / quit.
             let open = MenuItem::with_id(app, "open", "알림함 열기", true, None::<&str>)?;

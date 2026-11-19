@@ -31,3 +31,6 @@ lto = true
 opt-level = 3
 panic = "abort"
 strip = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6" # already in the tree via tauri; used to let the pet join full-screen spaces

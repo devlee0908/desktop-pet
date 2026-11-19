@@ -245,7 +245,7 @@ python3 -m venv .venv && .venv/bin/pip install opencv-python numpy
 | Dock/작업 표시줄 | `ActivationPolicy::Accessory`로 숨김. 알림함이 열려 있는 동안만 Regular | `skipTaskbar` |
 | 트레이 | 템플릿 아이콘 + 제목에 안 읽은 개수, 서버가 멈추면 `!` | 컬러 아이콘. 제목 표시가 없어서 서버가 멈추면 아이콘에 빨간 점(코드로 그림) |
 | 로그인 시 자동 실행 | LaunchAgent | 레지스트리 `Run` 키 |
-| 모든 데스크탑에 보이기 | `visibleOnAllWorkspaces` | 같은 설정 (가상 데스크탑) |
+| 모든 데스크탑에 보이기 | `visibleOnAllWorkspaces` + 전체 화면 앱 위 표시(`FullScreenAuxiliary`, `lib.rs`의 `join_fullscreen_spaces`) | 같은 설정 (가상 데스크탑). 항상 위 창이라 테두리 없는 전체 화면 앱 위에도 떠요 |
 | 설치 파일 | `.dmg` (Apple Silicon 전용, ad-hoc 서명) | `.msi`, `setup.exe` (서명 없음) — **Windows에서만 빌드 가능** |
 
 - **모니터 판정**은 `availableMonitors()`와 `screens.ts`의 `rectFor`로 해요. `monitorFromPoint`는 쓰지 마세요. 좌표 단위가 섞여서, 보조 모니터에 있던 고양이가 메인 모니터로 순간이동하는 버그가 있었어요.
@@ -339,7 +339,6 @@ cd src-tauri && cargo check && cd ..
 
 - [ ] 실제 Windows PC에서 확인: 투명 창, 클릭 통과, 트레이, 자동 실행, MCP
 - [ ] Intel Mac 지원 (universal 빌드: `--target universal-apple-darwin`, 사이드카도 두 아키텍처로)
-- [ ] 전체 화면 앱 위에서도 보이게 (macOS `fullScreenAuxiliary`)
 - [ ] 꼬리 모양 다듬기
 - [ ] 응답 알림 훅 빈도 조절 (예: 오래 걸린 응답만)
 - [ ] 코드 서명 / 공증, 자동 업데이트
